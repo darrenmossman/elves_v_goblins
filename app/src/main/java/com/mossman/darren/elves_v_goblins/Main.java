@@ -21,11 +21,16 @@ public class Main extends Activity {
 
     private void playGame() {
 
-        MediaPlayer[] mp = new MediaPlayer[4];
+        MediaPlayer[] mp = new MediaPlayer[5];
         mp[0] = MediaPlayer.create(this, R.raw.choking);
         mp[1] = MediaPlayer.create(this, R.raw.shield_sword);
         mp[2] = MediaPlayer.create(this, R.raw.straining_grunt);
         mp[3] = MediaPlayer.create(this, R.raw.straining_grunt_2);
+        mp[4] = MediaPlayer.create(this, R.raw.growl);
+
+        MediaPlayer mpw = MediaPlayer.create(this, R.raw.walking);
+        MediaPlayer mpf = MediaPlayer.create(this, R.raw.gong);
+        mpw.start();
 
         while (true) {
             try {
@@ -82,8 +87,8 @@ public class Main extends Activity {
                 } else {
                     unit.dir = Unit.Direction.none;
                 }
-                if (unit.attackTarget != null) {
-                    int m = (int)(Math.random() * 4);
+                if (unit.attackTarget != null && unit.arrived()) {
+                    int m = (int)(Math.random() * mp.length);
                     if (!mp[m].isPlaying()) mp[m].start();
                 }
             }
@@ -94,11 +99,17 @@ public class Main extends Activity {
                     }
                 }
                 break;
+            } else {
+                if (!mpw.isPlaying()) {
+                    mpw.start();
+                }
             }
             synchronized (units) {
                 Collections.sort(units);
             }
         }
+        mpw.stop();
+        mpf.start();
         try {
             Thread.sleep(20000);
         } catch (InterruptedException e) {}
@@ -109,6 +120,9 @@ public class Main extends Activity {
 
 
     private void initGame() {
+
+        Unit.elfAttackPower = (int)(Math.random() * 10 + 3);
+
         ArrayList<String> input = Utils.readFile(this, "Y2K18_15.txt");
 
         map = new char[input.size()][];

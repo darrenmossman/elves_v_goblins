@@ -17,7 +17,7 @@ public class Unit implements Comparable<Unit>{
 
     public enum Direction {none, up, left, down, right};
 
-    private int elfAttackPower = 10;
+    public static int elfAttackPower = 8;
     final static private int goblinAttachPower = 3;
 
     Type type;
@@ -27,7 +27,7 @@ public class Unit implements Comparable<Unit>{
     Unit attackTarget;
     Node shortestPath;
     boolean isDead;
-    long dying = GameLoopThread.FPS;
+    long dying = AnimationLoopThread.FPS;
     long bloody = 0;
 
     private char[][] map;
@@ -41,7 +41,12 @@ public class Unit implements Comparable<Unit>{
 
     private int px, py;
     private int dx, dy;
-    private int p = 0;
+    private double p = 0;
+    private double d = 1;
+
+    public boolean arrived() {
+        return px == x && py == py;
+    }
 
     private void updateFrame(int sx, int sy) {
         int sz = Math.min(sx, sy);
@@ -50,9 +55,11 @@ public class Unit implements Comparable<Unit>{
             px = dx; py = dy;
             dx = x; dy = y;
             p = 0;
+            d = d*1.2;
         } else if (dx != px || dy != py) {
-            p++;
+            p = p + d;
             if (p > sz) {
+                d = d*0.7;
                 p = 0;
                 px = dx; py = dy;
             }
@@ -63,8 +70,8 @@ public class Unit implements Comparable<Unit>{
         int ox = px*sx;
         int oy = py*sy;
 
-        xx = ox + (nx-ox) * p / sz;
-        yy = oy + (ny-oy) * p / sz;
+        xx = (int)(ox + (nx-ox) * p / sz);
+        yy = (int)(oy + (ny-oy) * p / sz);
         currentFrame = ++currentFrame % BMP_COLUMNS;
     }
 
@@ -79,24 +86,30 @@ public class Unit implements Comparable<Unit>{
         }
     }
 
-    public void draw(Canvas canvas, int sx, int sy, Bitmap bmpBlood) {
+    public void drawBlood(Canvas canvas, int sx, int sy, Bitmap bmpBlood) {
+        if (!arrived()) return;
+
         if (isDead) {
             if (--dying > 0) {
-                canvas.drawBitmap(bmpBlood, xx - width / 2, yy - height / 2, null);
-            }
-        } else {
-            if (bloody > 0) {
-                bloody--;
                 canvas.drawBitmap(bmpBlood, xx - bmpBlood.getWidth() / 2, yy - bmpBlood.getHeight() / 2, null);
             }
-            updateFrame(sx, sy);
-            int srcY = getAnimationRow() * height;
-            if (dir == Direction.none) currentFrame = 0;
-            int srcX = currentFrame * width;
-            Rect src = new Rect(srcX, srcY, srcX + width, srcY + height);
-            Rect dst = new Rect(xx - width / 2, yy - height / 2, xx + width / 2, yy + height / 2);
-            canvas.drawBitmap(bmp, src, dst, null);
+        } else {
+            if (--bloody > 0) {
+                canvas.drawBitmap(bmpBlood, xx - bmpBlood.getWidth() / 2, yy - bmpBlood.getHeight() / 2, null);
+            }
         }
+    }
+
+    public void draw(Canvas canvas, int sx, int sy) {
+        if (isDead) return;
+
+        updateFrame(sx, sy);
+        int srcY = getAnimationRow() * height;
+        if (dir == Direction.none) currentFrame = 0;
+        int srcX = currentFrame * width;
+        Rect src = new Rect(srcX, srcY, srcX + width, srcY + height);
+        Rect dst = new Rect(xx - width / 2, yy - height / 2, xx + width / 2, yy + height / 2);
+        canvas.drawBitmap(bmp, src, dst, null);
     }
 
     @Override
@@ -318,5 +331,9 @@ public class Unit implements Comparable<Unit>{
             if (target.type != type && !target.isDead) targets.add(target);
         }
         return targets;
+    }
+
+    public boolean isCollition(float x2, float y2) {
+        return x2 > x && x2 < x + width && y2 > y && y2 < y + height;
     }
 }

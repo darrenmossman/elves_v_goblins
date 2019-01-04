@@ -13,7 +13,7 @@ import java.util.List;
 
 public class GameView extends SurfaceView {
 
-    private GameLoopThread gameLoopThread;
+    private AnimationLoopThread gameLoopThread;
     private Bitmap bmpBlood;
     private Bitmap bmpBackground;
 
@@ -30,7 +30,7 @@ public class GameView extends SurfaceView {
         this.map = map;
         this.units = units;
 
-        gameLoopThread = new GameLoopThread(this);
+        gameLoopThread = new AnimationLoopThread(this);
         getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
@@ -109,8 +109,12 @@ public class GameView extends SurfaceView {
         int sy = getHeight() / hgt;
 
         synchronized (units) {
+            // draw blood under units
             for (Unit unit : units) {
-                unit.draw(canvas, sx, sy, bmpBlood);
+                unit.drawBlood(canvas, sx, sy, bmpBlood);
+            }
+            for (Unit unit : units) {
+                unit.draw(canvas, sx, sy);
             }
         }
     }
