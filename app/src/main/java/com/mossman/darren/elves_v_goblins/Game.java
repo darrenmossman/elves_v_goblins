@@ -3,13 +3,10 @@ package com.mossman.darren.elves_v_goblins;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.Window;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Game extends Activity implements ThreadCompleteListener {
@@ -20,106 +17,6 @@ public class Game extends Activity implements ThreadCompleteListener {
     private GameThread gameThread;
     private AnimationThread animationThread;
     private GameView gameView;
-
-    private void playGame() {
-
-        MediaPlayer[] mp = new MediaPlayer[5];
-        mp[0] = MediaPlayer.create(this, R.raw.choking);
-        mp[1] = MediaPlayer.create(this, R.raw.shield_sword);
-        mp[2] = MediaPlayer.create(this, R.raw.straining_grunt);
-        mp[3] = MediaPlayer.create(this, R.raw.straining_grunt_2);
-        mp[4] = MediaPlayer.create(this, R.raw.growl);
-
-        MediaPlayer mpw = MediaPlayer.create(this, R.raw.walking);
-        MediaPlayer mpf = MediaPlayer.create(this, R.raw.gong);
-        mpw.start();
-
-        while (true) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {}
-
-            boolean noTargets = false;
-            for (Unit unit : units) {
-                if (unit.isDead) {
-                    continue;
-                }
-                unit.shortestPath = null;
-                unit.attackTarget = null;
-                List<Unit> targets = unit.getTargets(units);
-
-                if (targets.size() == 0) {
-                    noTargets = true;
-                    unit.dir = Unit.Direction.none;
-                    break;
-                }
-                for (Unit target : targets) {
-                    if (unit.inRangeOf(target)) {
-                        if (unit.attackTarget == null || target.hitPoints < unit.attackTarget.hitPoints) {
-                            unit.attackTarget = target;
-                        }
-                    } else if (unit.attackTarget == null) {
-                        Node node = unit.getShortestPath(target);
-                        if (node != null) {
-                            if (unit.shortestPath == null || node.dist < unit.shortestPath.dist) {
-                                unit.shortestPath = node;
-                            } else if (node.dist == unit.shortestPath.dist) {
-                                if (node.y < unit.shortestPath.y ||
-                                        node.y == unit.shortestPath.y && node.x < unit.shortestPath.x) {
-                                    unit.shortestPath = node;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (unit.attackTarget != null) {
-                    unit.attack(unit.attackTarget);
-                } else if (unit.shortestPath != null) {
-                    unit.moveTowards(unit.shortestPath);
-                    for (Unit target : targets) {
-                        if (unit.inRangeOf(target)) {
-                            if (unit.attackTarget == null || target.hitPoints < unit.attackTarget.hitPoints) {
-                                unit.attackTarget = target;
-                            }
-                        }
-                    }
-                    if (unit.attackTarget != null) {
-                        unit.attack(unit.attackTarget);
-                    }
-                } else {
-                    unit.dir = Unit.Direction.none;
-                }
-                if (unit.attackTarget != null && unit.arrived()) {
-                    int m = (int)(Math.random() * mp.length);
-                    if (!mp[m].isPlaying()) mp[m].start();
-                }
-            }
-            if (noTargets) {
-                synchronized (units) {
-                    for (Unit unit : units) {
-                        unit.dir = Unit.Direction.none;
-                    }
-                }
-                break;
-            } else {
-                if (!mpw.isPlaying()) {
-                    mpw.start();
-                }
-            }
-            synchronized (units) {
-                Collections.sort(units);
-            }
-        }
-        mpw.stop();
-        mpf.start();
-        try {
-            Thread.sleep(20000);
-        } catch (InterruptedException e) {}
-
-        gameView.stop();
-        finish();
-    }
-
 
     private void initGame() {
 
@@ -175,29 +72,14 @@ public class Game extends Activity implements ThreadCompleteListener {
         }
     }
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         initGame();
-
         gameThread = new GameThread(this, units);
         animationThread = new AnimationThread();
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         gameView = new GameView(this, gameThread, animationThread, map, units);
         setContentView(gameView);
-
-
-/*
-        new Handler().postDelayed(
-            new Runnable() {
-               @Override
-               public void run() {
-                   playGame();
-               }
-           }, 1000);
-*/
     }
 }

@@ -5,6 +5,8 @@ import android.graphics.Canvas;
 
 public class AnimationThread extends Thread {
     static final long FPS = 10;
+    private static final long ticksPS = 1000 / FPS;
+
     private GameView view;
     private boolean running = false;
     private boolean paused = false;
@@ -33,40 +35,31 @@ public class AnimationThread extends Thread {
 
     @Override
     public void run() {
-        long ticksPS = 1000 / FPS;
-        long startTime;
-        long sleepTime = 0;
         while (running) {
             while (paused) {
                 try {
-                    Thread.sleep(100);
+                    sleep(100);
                 } catch (InterruptedException ie) {
                 }
             }
-            Canvas c = null;
-            startTime = System.currentTimeMillis();
+            Canvas canvas = null;
+            long startTime = System.currentTimeMillis();
             try {
-                c = view.getHolder().lockCanvas();
+                canvas = view.getHolder().lockCanvas();
                 synchronized (view.getHolder()) {
-                    drawView(c);
+                    drawView(canvas);
                 }
             }
             finally {
-                if (c != null) {
-                    view.getHolder().unlockCanvasAndPost(c);
+                if (canvas != null) {
+                    view.getHolder().unlockCanvasAndPost(canvas);
                 }
             }
-            sleepTime = ticksPS-(System.currentTimeMillis() - startTime);
-
+            long sleepTime = ticksPS - (System.currentTimeMillis() - startTime);
             try {
-                if (sleepTime > 0)
-                    sleep(sleepTime);
-                else
-                    sleep(10);
-            } catch (Exception e) {}
-        }
-        if (sleepTime == 0) {
-            System.out.println("test");
+                if (sleepTime > 0) sleep(sleepTime);
+                else sleep(10);
+            } catch (InterruptedException e) {}
         }
     }
 }

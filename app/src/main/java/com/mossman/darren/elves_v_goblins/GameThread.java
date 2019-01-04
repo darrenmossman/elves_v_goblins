@@ -10,8 +10,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class GameThread extends Thread {
 
+    private static final long FPS = 2;
+    private static final long ticksPS = 1000 / FPS;
+
     private Context context;
     private List<Unit> units;
+    private boolean paused;
 
     public GameThread(Context context, List<Unit> units) {
         this.context = context;
@@ -28,16 +32,30 @@ public class GameThread extends Thread {
         mp[4] = MediaPlayer.create(context, R.raw.growl);
 
         MediaPlayer mpw = MediaPlayer.create(context, R.raw.walking);
-        MediaPlayer mpf = MediaPlayer.create(context, R.raw.gong);
+        MediaPlayer mpg = MediaPlayer.create(context, R.raw.gong);
+        try {
+            mpw.prepare();
+        } catch (Exception e) {
+            String s = e.getMessage();
+        }
         mpw.start();
 
         while (true) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {}
+            if (paused && mpw.isPlaying()) mpw.pause();
+            while (paused) {
+                try {
+                    sleep(100);
+                } catch (InterruptedException e) {}
+            }
+            if (!mpw.isPlaying()) {
+                mpw.start();
+            }
+            long startTime = System.currentTimeMillis();
 
             boolean noTargets = false;
             for (Unit unit : units) {
+                if (paused && mpw.isPlaying()) mpw.pause();
+
                 if (unit.isDead) {
                     continue;
                 }
@@ -51,6 +69,7 @@ public class GameThread extends Thread {
                     break;
                 }
                 for (Unit target : targets) {
+                    if (paused && mpw.isPlaying()) mpw.pause();
                     if (unit.inRangeOf(target)) {
                         if (unit.attackTarget == null || target.hitPoints < unit.attackTarget.hitPoints) {
                             unit.attackTarget = target;
@@ -86,7 +105,7 @@ public class GameThread extends Thread {
                 } else {
                     unit.dir = Unit.Direction.none;
                 }
-                if (unit.attackTarget != null && unit.arrived()) {
+                if (!paused && unit.attackTarget != null && unit.arrived()) {
                     int m = (int)(Math.random() * mp.length);
                     if (!mp[m].isPlaying()) mp[m].start();
                 }
@@ -98,19 +117,21 @@ public class GameThread extends Thread {
                     }
                 }
                 break;
-            } else {
-                if (!mpw.isPlaying()) {
-                    mpw.start();
-                }
             }
             synchronized (units) {
                 Collections.sort(units);
             }
+
+            long sleepTime = ticksPS-(System.currentTimeMillis() - startTime);
+            try {
+                if (sleepTime > 0) sleep(sleepTime);
+                else sleep(10);
+            } catch (InterruptedException e) {}
         }
         mpw.stop();
-        mpf.start();
+        mpg.start();
         try {
-            Thread.sleep(20000);
+            sleep(20000);
         } catch (InterruptedException e) {}
 
     }
@@ -129,10 +150,13 @@ public class GameThread extends Thread {
         }
     }
 
+    public void setPaused(boolean pause) {
+        paused = pause;
+    }
+
     @Override
     public void run() {
         playGame();
         notifyListeners();
     }
-
 }

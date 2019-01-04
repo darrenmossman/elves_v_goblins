@@ -333,7 +333,8 @@ public class Unit implements Comparable<Unit>{
         return targets;
     }
 
-    public boolean isCollition(float x2, float y2) {
-        return x2 > x && x2 < x + width && y2 > y && y2 < y + height;
+    public boolean isCollition(float x, float y) {
+        Rect dst = new Rect(xx - width / 2, yy - height / 2, xx + width / 2, yy + height / 2);
+        return dst.contains((int)x, (int)y);
     }
 }

@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -13,13 +14,14 @@ import java.util.List;
 
 public class GameView extends SurfaceView {
 
-    private GameThread gameThread;
     private AnimationThread animationThread;
     private Bitmap bmpBlood;
     private Bitmap bmpBackground;
 
     private char[][] map;
     private List<Unit> units;
+
+    private long lastClick;
 
     public void stop() {
         animationThread.setPaused(false);
@@ -31,7 +33,6 @@ public class GameView extends SurfaceView {
                     final AnimationThread animationThread,
                     char[][] map, List<Unit> units) {
         super(context);
-        this.gameThread = gameThread;
         this.animationThread = animationThread;
         this.map = map;
         this.units = units;
@@ -39,6 +40,7 @@ public class GameView extends SurfaceView {
         getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
+                gameThread.setPaused(true);
                 animationThread.setPaused(true);
             }
 
@@ -47,12 +49,14 @@ public class GameView extends SurfaceView {
                 if (animationThread.getPaused()) {
                     animationThread.setPaused(false);
                     animationThread.interrupt();
-
-                } else {
-                    gameThread.start();
+                    gameThread.setPaused(false);
+                    gameThread.interrupt();
+                }
+                else {
                     animationThread.setView(GameView.this);
                     animationThread.setRunning(true);
                     animationThread.start();
+                    gameThread.start();
                 }
             }
 
@@ -63,13 +67,6 @@ public class GameView extends SurfaceView {
         });
         bmpBlood = BitmapFactory.decodeResource(getResources(), R.drawable.blood);
         bmpBackground = BitmapFactory.decodeResource(getResources(), R.drawable.background);
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (canvas == null) return;
-        drawMap(canvas);
-        drawUnits(canvas);
     }
 
     private void drawMap(Canvas canvas) {
@@ -125,4 +122,37 @@ public class GameView extends SurfaceView {
             }
         }
     }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (canvas == null) return;
+        drawMap(canvas);
+        drawUnits(canvas);
+    }
+
+    @Override
+
+    public boolean onTouchEvent(MotionEvent event) {
+
+        if (System.currentTimeMillis() - lastClick > 500) {
+            lastClick = System.currentTimeMillis();
+            synchronized (units) {
+                for (Unit unit : units) {
+                    if (unit.isCollition(event.getX(), event.getY())) {
+                        // Finger of God
+                        if (unit.type == Unit.Type.Goblin) {
+                            unit.isDead = true;
+                        }
+                        else {
+                            unit.attackPower *= 10;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+
+    }
+
 }
