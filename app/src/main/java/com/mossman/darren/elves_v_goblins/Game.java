@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Main extends Activity {
-
+public class Game extends Activity implements ThreadCompleteListener {
 
     private char[][] map;
     private List<Unit> units;
+
+    private GameThread gameThread;
+    private AnimationThread animationThread;
     private GameView gameView;
 
     private void playGame() {
@@ -166,17 +168,29 @@ public class Main extends Activity {
         }
     }
 
-    /** Called when the activity is first created. */
+    public void notifyOfThreadComplete(final Thread thread) {
+        if (thread.equals(gameThread)) {
+            gameView.stop();
+            finish();
+        }
+    }
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         initGame();
 
+        gameThread = new GameThread(this, units);
+        animationThread = new AnimationThread();
+
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        gameView = new GameView(this, map, units);
+        gameView = new GameView(this, gameThread, animationThread, map, units);
         setContentView(gameView);
 
+
+/*
         new Handler().postDelayed(
             new Runnable() {
                @Override
@@ -184,5 +198,6 @@ public class Main extends Activity {
                    playGame();
                }
            }, 1000);
+*/
     }
 }

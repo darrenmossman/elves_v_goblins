@@ -27,7 +27,7 @@ public class Unit implements Comparable<Unit>{
     Unit attackTarget;
     Node shortestPath;
     boolean isDead;
-    long dying = AnimationLoopThread.FPS;
+    long dying = AnimationThread.FPS;
     long bloody = 0;
 
     private char[][] map;

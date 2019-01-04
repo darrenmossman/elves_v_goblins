@@ -13,7 +13,8 @@ import java.util.List;
 
 public class GameView extends SurfaceView {
 
-    private AnimationLoopThread gameLoopThread;
+    private GameThread gameThread;
+    private AnimationThread animationThread;
     private Bitmap bmpBlood;
     private Bitmap bmpBackground;
 
@@ -21,31 +22,37 @@ public class GameView extends SurfaceView {
     private List<Unit> units;
 
     public void stop() {
-        gameLoopThread.setPaused(false);
-        gameLoopThread.setRunning(false);
+        animationThread.setPaused(false);
+        animationThread.setRunning(false);
     }
 
-    public GameView(Context context, char[][] map, List<Unit> units) {
+    public GameView(Context context,
+                    final GameThread gameThread,
+                    final AnimationThread animationThread,
+                    char[][] map, List<Unit> units) {
         super(context);
+        this.gameThread = gameThread;
+        this.animationThread = animationThread;
         this.map = map;
         this.units = units;
 
-        gameLoopThread = new AnimationLoopThread(this);
         getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-                gameLoopThread.setPaused(true);
+                animationThread.setPaused(true);
             }
 
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                if (gameLoopThread.getPaused()) {
-                    gameLoopThread.setPaused(false);
-                    gameLoopThread.interrupt();
+                if (animationThread.getPaused()) {
+                    animationThread.setPaused(false);
+                    animationThread.interrupt();
 
                 } else {
-                    gameLoopThread.setRunning(true);
-                    gameLoopThread.start();
+                    gameThread.start();
+                    animationThread.setView(GameView.this);
+                    animationThread.setRunning(true);
+                    animationThread.start();
                 }
             }
 

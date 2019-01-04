@@ -3,13 +3,16 @@ package com.mossman.darren.elves_v_goblins;
 import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 
-public class AnimationLoopThread extends Thread {
+public class AnimationThread extends Thread {
     static final long FPS = 10;
     private GameView view;
     private boolean running = false;
     private boolean paused = false;
 
-    public AnimationLoopThread(GameView view) {
+    public AnimationThread() {
+    }
+
+    public void setView(GameView view) {
         this.view = view;
     }
 
