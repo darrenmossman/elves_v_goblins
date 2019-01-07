@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-public class GameThread extends Thread {
+public class GameThread extends NotifyingThread {
 
     private static final long FPS = 2;
     private static final long ticksPS = 1000 / FPS;
@@ -22,7 +22,7 @@ public class GameThread extends Thread {
         this.units = units;
     }
 
-    private void playGame() {
+    public void doRun() {
 
         MediaPlayer[] mp = new MediaPlayer[5];
         mp[0] = MediaPlayer.create(context, R.raw.choking);
@@ -136,27 +136,7 @@ public class GameThread extends Thread {
 
     }
 
-    private final Set<ThreadCompleteListener> listeners = new CopyOnWriteArraySet<>();
-
-    public final void addListener(final ThreadCompleteListener listener) {
-        listeners.add(listener);
-    }
-    public final void removeListener(final ThreadCompleteListener listener) {
-        listeners.remove(listener);
-    }
-    private final void notifyListeners() {
-        for (ThreadCompleteListener listener : listeners) {
-            listener.notifyOfThreadComplete(this);
-        }
-    }
-
     public void setPaused(boolean pause) {
         paused = pause;
-    }
-
-    @Override
-    public void run() {
-        playGame();
-        notifyListeners();
     }
 }
