@@ -5,8 +5,6 @@ import android.media.MediaPlayer;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public class GameThread extends NotifyingThread {
 
